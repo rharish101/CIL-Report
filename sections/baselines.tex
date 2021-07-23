@@ -25,6 +25,10 @@ Refer to Table~\ref{tab:unet-hyper-params} for further architecture specifics.
         Dropout & 0.1 \\
         Initial channels ($c_1$) & 64 \\
         Maximum channels ($c_\mathrm{max}$) & 1024 \\%chktex 35
+        2D convolution kernel size & $3 \times 3$ \\
+        2D convolution padding & SAME \\
+        Leaky ReLU slope & 0.2 \\
+        Max pooling kernel size & $2 \times 2$ \\
         \bottomrule
     \end{tabular}
 \end{table}
