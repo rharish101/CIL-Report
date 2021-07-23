@@ -113,6 +113,11 @@ sorting=none
         \subsubsection{Graph Cuts}
 
     \subsection{UNET bottleneck}
+        In the U-Net architecture, the downsampling at each depth is done using max-pooling.
+        However, if the image size is too large, the layers might miss the global information at the lowest depth.
+        Hence, we experiment by using global average pooling at the lowest depth.
+        This enforces a bottleneck that captures a single scalar for the entire image in each channel.
+        This is done to capture global information from the entire image irrespective of the image size.
 
     \subsection{GAN}
 
