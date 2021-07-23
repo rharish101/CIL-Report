@@ -9,3 +9,6 @@
 *.out
 *.pdf
 *.run.xml
+
+# Diagrams for diagrams.net
+*.drawio

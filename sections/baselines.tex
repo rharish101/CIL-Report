@@ -12,6 +12,7 @@ Initially, the three RGB channels are transformed into $c_1$ channels.
 At every depth, the number of channels increases by a factor of 2, until it reaches a fixed upper cap ($c_\mathrm{max}$).%chktex 35
 
 Refer to Table~\ref{tab:unet-hyper-params} for further architecture specifics.
+Refer to Figure~\ref{fig:arch} for the architecture diagram.
 
 \begin{table}[h]
     \centering
@@ -32,3 +33,10 @@ Refer to Table~\ref{tab:unet-hyper-params} for further architecture specifics.
         \bottomrule
     \end{tabular}
 \end{table}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/CIL-arch.pdf}
+    \caption{The model's architecture}%
+    \label{fig:arch}
+\end{figure}
