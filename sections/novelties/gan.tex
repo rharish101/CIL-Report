@@ -1,15 +1,10 @@
 The outputs of the baseline model are often not as smooth and continuous as the ground truth.
-Thus, we use a GAN~\cite{gan} as a ``learned'' loss to enforce smoothness on a pixel-level.
+Thus, we used a GAN~\cite{gan} as a ``learned'' loss to enforce smoothness on a pixel-level.
 
-Our baseline model is treated as the generator.
+Here, the baseline model is treated as the generator.
 We add a patch discriminator~\cite{pix2pix} that has the same architecture as the left half of the baseline model.
-We don't use a regular discriminator, since we want the discriminator to attend to the high-frequency output textures, which are better captured by image patches.
 The outputs of the layer at the lowest depth gives us the discriminator's predictions per patch (here each patch is of size $32 \times 32$).
-A global average pooling layer then converts all of the predictions into a single prediction for the image.
+A global average pooling layer then converts all the predictions into a single prediction for the image.
 
-We use the Wasserstein~\cite{wgan} loss to train the network.
-Additionally, we add spectral normalization~\cite{spectral-norm} to the weights of the discriminator to enforce the Lipschitz continuity constraint for the Wasserstein loss.
-
-We observed that the improvements with the GAN are not substantial enough.
-Further, it also increases the computation time.
-Hence, we do not use this novelty in our final model.
+We used the Wasserstein~\cite{wgan} loss to train the GAN.
+Additionally, we added spectral normalization~\cite{spectral-norm} to the weights of the discriminator to enforce the Lipschitz continuity constraint for the Wasserstein loss.
