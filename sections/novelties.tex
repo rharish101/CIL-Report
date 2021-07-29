@@ -1,6 +1,7 @@
-One of the main observations in our baselines predictions was the patchy nature of classifications, as it did not produce coherent streets in most cases. When looking directly at the output probabilities, it was similar to a grey-scale image of the input. Thus the model was only focusing on texture instead of shape. Out novelties tried to remedy this by including inductive biases about shape in out classification.
+One of the main observations in our baselines predictions was the patchy nature of classifications, as it did not produce coherent streets in most cases. When looking directly at the output probabilities, it was similar to a grey-scale image of the input. Thus the model was only focusing on texture instead of shape, in line with the findings of \cite{baker2018deep}. Our novelties attempt to remedy this by including inductive biases about shape.
 
-\subsection{Deformations}
+\subsection{Augmentations}
+One of the main components of the U-Net framework is using random augmentations. Applying a sequence of stochastic image augmentations on original input data avoids overfitting the limited set of inputs and helps the model generalize over unseen conditions. To this end, we tried out different classes of augmentations based on the nature of images and could achieve noticeable improvement over U-Net's vanilla augmentation set. Our final set of augmentations includes crop and rotations to generate new data preserving the conditions \footnote{Random crop,  random $90^{\circ}$ rotation, horizontal flip, vertical flip}, color transformations\footnote{Random brightness and contrast, color jitter, Gaussian blur} to mitigate the texture bias, and shape deformations\footnote{One of Elastic deformation, Grid distortion, or Optical distortion} to force the focus on shape.\footnote{Random augmentations are applied in a sequence with the individual probability of $0.5$.}
 
 \subsection{Contrastive Learning in Bottleneck}
 
@@ -8,9 +9,31 @@ One of the main observations in our baselines predictions was the patchy nature 
 \input{sections/novelties/bottleneck}
 
 \subsection{Scrapped Novelties}
-    This section gives an overview of the novelties that were tried, but didn't improve the model.
+    This section gives an overview of the novelties that were tried, but didn't improve the baseline.
+    
+    \subsubsection{Physarum Polycephalum}
+    One attempt is inspired by the Physarum Polycephalum (PP), a singular cell organism that has the suprising ability to do shortest path approximations between food sources \cite{nakagaki2001smart}. The intuition is that similar to food sources, such a mechanism could effectively connect patches of street into correct streets. The PP algorithm is a post-processing step that is initialized at all the edges of the image that are classified as street. It then moves inward, either with fixed rule, or using a local CNN classification. The training of this CNN proved too unstable with different hyper parameters, and was thus not further explored.
+   
+    \subsubsection{Graph Neural Network}
+    Using a U-Net jointly trained with a Graph Neural Network (GNN) has proven effective for classifying arteries in the eye \cite{shin2019deep}. The classifications in the retinal artery tasks are already less patchy than the ones of our baseline, thus the method can not easily be applied on this task. The main issue is that one has to create a graph from the classification to train and apply a GNN on, but our baseline classification does not provide the necessary outputs.
+    
+    \subsubsection{Conditional Random Fields}
+    One of our ideas for reducing the impact of color in classification and including the shapes in the decision was Conditional Random Fields (CRF). CRF modeling is a method that takes the neighboring area for each pixel into account when classifying it. CRF was previously used as a post-processing step in most cases, but this can decrease the overall speed of the classification because of CRF's slow training and inference speed. Instead, we used CRF as a layer in the convolutional network, which is known as ConvCRF \cite{convcrf}.
+    
+    \subsubsection{CNN Ensembler}
+    Given the multiple different outputs that were produce by the different models and novelties, a reasonable thing is to attempt ensembling \cite{hansen1990neural}. We diverge from the basic ensembling paradigm by not jointly training models or taking the majority vote, but rather train a CNN on top of the different classifications and the input image. In multiple runs with different classifications, the model never managed to outperform the strongest model. It seems, that for a proper use of this method, one needs to jointly train the CNN ensembler with the models for best perfomance. No experiments in this direction were undertaken.
 
-    Learned Ensemblers, Slime, Soft dice loss, GNN, CRF, Graph cuts. Soft dice loss (or maybe mention that in baseline)
+    
+    \subsubsection{Graph Cuts}
+    One of the widely used algorithms for the background-foreground segmentation in classic computer vision is Graph-Cut \cite{graphcut}. 
+The method's main idea is to model an image as a graph (with corresponding nodes for each pixel and edges for adjacent pixels with an intensity-based penalty function) and solve the task of segmentation by computing the minimum cut in the graph.
+GrabCut \cite{grabcut} further leverages the Graph-Cut method by iteratively estimating the minimum cut over GMM labels separately trained for foreground and background.
+
+We have observed that applying hard thresholding on output probabilities might cause some parts of the roads to be missed that results in bubbly masks. Thus, we tried using GrabCut as post-processing instead. This resulted in more coherent and complete roads in the output mask. However, since GrabCut has only access to downstream probabilities as the signal, it also amplifies the error on areas like parking lots that are wrongly classified as a road.
+
+We also used GrabCut as an ensembling method. We treated grayscale probability masks outputted from different models as channels of an N-d image and fed GrabCut to generate the final binary mask. This way, we managed to get smooth ensembled masks containing all the partially recognized roads of each model. Though, the wrongly classified roads still propagate to the ensembled mask, leading to a minor drop in the accuracy.
+
+Having all the partially recognized road segments aggregated into connected roads by GrabCut ensembler, we found Slime a promising tool for noise removal. We applied Slime on GrabCut ensmebler outputs and got wrongly classified parking lots removed. Although it increased our public score, the score could not exceed our best individual model's score.
 
     \subsubsection{GAN}
     \input{sections/novelties/gan}
