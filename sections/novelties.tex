@@ -3,7 +3,8 @@ One of the main observations in our baselines predictions was the patchy nature 
 \subsection{Augmentations}
 One of the main components of the U-Net framework is using random augmentations. Applying a sequence of stochastic image augmentations on original input data avoids overfitting the limited set of inputs and helps the model generalize over unseen conditions. To this end, we tried out different classes of augmentations based on the nature of images and could achieve noticeable improvement over U-Net's vanilla augmentation set. Our final set of augmentations includes crop and rotations to generate new data preserving the conditions \footnote{Random crop,  random $90^{\circ}$ rotation, horizontal flip, vertical flip}, color transformations\footnote{Random brightness and contrast, color jitter, Gaussian blur} to mitigate the texture bias, and shape deformations\footnote{One of Elastic deformation, Grid distortion, or Optical distortion} to force the focus on shape.\footnote{Random augmentations are applied in a sequence with the individual probability of $0.5$.}
 
-\subsection{Contrastive Learning in Bottleneck}
+\subsection{Contrastive Learning of Shape Constraints}
+\input{sections/novelties/shape}
 
 \subsection{UNET bottleneck}
 \input{sections/novelties/bottleneck}
