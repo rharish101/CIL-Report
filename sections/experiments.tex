@@ -1,1 +1,11 @@
-We ran all the experiments using Adam optimizer with the learning rate of $10^{-4}$ and the weight decay of $5*10^{-6}$. We used Binary Cross Entropy as our primary loss function, summed up with the Contrastive Shape loss in the Contrastive Learning experiments.  We did all the preliminary experiments using 80 percent of the data to train for $3'000$ epochs and the rest for validation. In the final run, however, we used all the labeled data and trained the model for [?] epochs. All the random seeds are set to a fixed number to ensure the reproducibility of the results.
+We run all the experiments using the Adam~\cite{adam} optimizer with the one-cycle~\cite{one-cycle-lr} learning rate schedule.
+We also use L2 weight decay in the manner suggested in AdamW\cite{adamw}.
+We employ the binary cross-entropy loss function, summed up with the contrastive shape loss as per Equation~\ref{eq:total-loss}.
+
+We trained all the experiments by splitting the dataset into a training split and a cross-validation split.
+All the random seeds are set to a fixed number to ensure the reproducibility of the results.
+Our computing capabilities consist of 2 NVIDIA\textsuperscript{\textregistered} GeForce\textsuperscript{\textregistered} GPUs with mixed precision training~\cite{amp} for all experiments.
+
+The inference is done on the unlabelled test set.
+Aligned with the Kaggle submission format, we apply average pooling on $16\times 16$ patches of predicted probability masks and binarize them as road/non-road by thresholding them.
+All hyper-parameters are specified in Section~\ref{appendix:hyper-params} in the appendix.

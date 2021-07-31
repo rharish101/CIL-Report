@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[twocolumn]{article}
 
 % if you need to pass options to natbib, use, e.g.:
 %     \PassOptionsToPackage{numbers, compress}{natbib}
@@ -16,6 +16,7 @@
 
 % to avoid loading the natbib package, add option nonatbib:
      \usepackage[final, nonatbib]{neurips_2020}
+     \usepackage[ruled,vlined]{algorithm2e}
 
 \usepackage[
 backend=biber,
@@ -41,12 +42,14 @@ sorting=none
 \usepackage{wrapfig}
 \usepackage{xcolor}
 \usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{stfloats}
 \usepackage{amsthm}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
 
-
-\title{Road Segmentation - SHAJ report}
+\title{Road Segmentation Report}
 %\title{Natural Language Retrieval For Language Grounding in Reinforcement Learning}
 %\title{Peruse The Loathsome Enchidirion}
 %\title{Know Where To Look}
@@ -85,7 +88,7 @@ sorting=none
 }
 \begin{document}
 
-\maketitle
+\twocolumn[\maketitle]
 
 \section{Introduction} \label{intro}
 \input{sections/introduction}
@@ -93,21 +96,32 @@ sorting=none
 \section{Baseline}\label{section:baselines}
 \input{sections/baselines}
 
-\section{Novelties}
+\section{Novelties}\label{section:novelties}
 \input{sections/novelties}
 
 \section{Experiments}\label{section:experiments}
-
 \input{sections/experiments}
 
-\section{Result}\label{section:results}
+\section{Results}\label{section:results}
+\input{sections/results}
 
-\section{Discussion}\label{section:model}
-\input{sections/discussion}
+\section{Conclusion}\label{section:conclusion}
+\input{sections/conclusion}
 
 \newpage
 
 \small
 \printbibliography{}
+
+\appendix
+
+\section{Architecture}\label{appendix:architecture}
+\input{sections/appendix/architecture}
+
+\section{Augmentations}\label{appendix:augmentations}
+\input{sections/appendix/augmentations}
+
+\section{Hyperparameters}\label{appendix:hyper-params}
+\input{sections/appendix/hyperparameters}
 
 \end{document}

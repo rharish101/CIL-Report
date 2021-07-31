@@ -1,40 +1,147 @@
-One of the main observations in our baselines predictions was the patchy nature of classifications, as it did not produce coherent streets in most cases. When looking directly at the output probabilities, it was similar to a grey-scale image of the input. Thus the model was only focusing on texture instead of shape, in line with the findings of \cite{baker2018deep}. Our novelties attempt to remedy this by including inductive biases about shape.
-
-\subsection{Augmentations}
-One of the main components of the U-Net framework is using random augmentations. Applying a sequence of stochastic image augmentations on original input data avoids overfitting the limited set of inputs and helps the model generalize over unseen conditions. To this end, we tried out different classes of augmentations based on the nature of images and could achieve noticeable improvement over U-Net's vanilla augmentation set. Our final set of augmentations includes crop and rotations to generate new data preserving the conditions \footnote{Random crop,  random $90^{\circ}$ rotation, horizontal flip, vertical flip}, color transformations\footnote{Random brightness and contrast, color jitter, Gaussian blur} to mitigate the texture bias, and shape deformations\footnote{One of Elastic deformation, Grid distortion, or Optical distortion} to force the focus on shape.\footnote{Random augmentations are applied in a sequence with the individual probability of $0.5$.}
+One of the main observations in our baseline's predictions was the patchy nature of classifications, as it did not produce coherent streets in most cases. When looking directly at the output probabilities, it was similar to a grey-scale image of the input. Thus, the model was only focusing on texture instead of shape, in line with the findings of \cite{baker2018deep,texture-bias-1,texture-bias-2,texture-bias-3,texture-bias-4,texture-bias-5}. Our novelties attempt to remedy this by including inductive biases about shape.
 
 \subsection{Contrastive Learning of Shape Constraints}
-\input{sections/novelties/shape}
+In the U-Net architecture, the outputs of the lowest level have a lower resolution compared to the outputs of any other level.
+Thus, each pixel in that level should encode coarse information about a patch of the input image.
+Since textures are fine local details and shapes are coarse global details, we theorize that the U-Net bottleneck outputs should ideally contain shape information about the image.
+However, this may not occur in practice, and it may lead to texture-biased models.
 
-\subsection{UNET bottleneck}
-\input{sections/novelties/bottleneck}
+Therefore, we use a contrastive learning (CL) framework~\cite{chopra2005learning} to enforce shape information in the U-Net bottleneck.
+For this, we formulate the following constraint:
 
-\subsection{Scrapped Novelties}
-    This section gives an overview of the novelties that were tried, but didn't improve the baseline.
+\newtheorem*{clconstraint}{CL Constraint}
+\begin{clconstraint}
+Any two images with the same shape, even with different textures, should give the same bottleneck output
+\end{clconstraint}
+
+The U-Net architecture contains multiple skip connections that can propagate the information in the earlier layers.
+Thus, even if texture information is lost in the bottleneck, it can be obtained through these layers.
+We leave the choice of how much of each kind of information is used up to the right half of the architecture.
+
+We denote two images with the same shape but with different textures as a positive pair.
+To get a positive pair, we use a composition of augmentations $\mathcal{T}$ that distorts texture while preserving the shape.
+These augmentations are specified in Section~\ref{appendix:augmentations-shape} in the appendix.
+We use $\mathcal{T}$ in the SimCLR~\cite{simclr} framework.
+Here, bottleneck outputs are thought of as latent vectors containing shape information.
+In this approach, the latent vectors of positive pairs are forced to be closer, while being forced away from the latent vectors of different images.
+
+
+This is achieved using the following loss setup:
+\begin{gather}
+    \mathcal{L}_{shape} = - \sum_{(i,j) \in S} \log \frac{\exp(\text{cosine-sim}(\mathbf{z}_i, \mathbf{z}_j) / \tau)}{\sum_{k \neq i} \exp(\text{cosine-sim}(\mathbf{z}_i, \mathbf{z}_k) / \tau)} \\
+    \mathcal{L}_{total} = \mathcal{L}_{cross-entropy} + \alpha_{shape} \mathcal{L}_{shape} \label{eq:total-loss}
+\end{gather}
+
+Here, $S$ is the set of all positive pairs.
+For $(i, j) \in S$, $\mathbf{z}_i = \text{bottleneck}(\mathbf{x}_i)$, $\mathbf{z}_j = \text{bottleneck}(\mathcal{T}(\mathbf{x}_i))$.
+$k$ is the index of any image in the mini-batch of original or augmented images such that $k \neq i$.
+All images are taken from a mini-batch and are compared with each other (we assume that they have different shapes).
+cosine-sim$(\mathbf{x}, \mathbf{y})$ is the cosine similarity between vectors $\mathbf{x}$ and $\mathbf{y}$.
+$\tau$ is the temperature coefficient for the softmax.
+
+
+\subsection{Augmentations}
+One of the key components of the U-Net framework is random augmentations.
+Applying a sequence of stochastic image augmentations on original input data avoids overfitting the limited set of inputs and helps the model generalize over unseen conditions.
+To this end, based on the nature of our dataset, we tested different types of augmentations that resulted in noticeable improvement over U-Net's vanilla augmentation set.
+Our final set of augmentations divides into three classes:
+\begin{enumerate}
+    \item \textbf{Crops and rotations}: for rotation and scale invariance
+    \item \textbf{Color transformations}: to mitigate the texture bias
+    \item \textbf{Shape deformations}: to make the model generalize to novel shapes
+\end{enumerate}
+The detailed list of finalized augmentations is reported in Section \ref{appendix:augmentations-class} of the appendix.
+
+% \subsection{UNET bottleneck}
+% In the U-Net architecture, the downsampling at each depth is done using max-pooling.
+% However, if the image size is too large, the layers might miss the global information at the lowest depth.
+% Hence, we experiment by using global average pooling at the lowest depth.
+% This enforces a bottleneck that captures a single scalar for the entire image in each channel.
+% This is done to capture global information from the entire image irrespective of the image size.
+
+\subsection{Data Cleaning}
+While inspecting the given dataset, we noticed noisy and inconsistent labeling in the ground truth.
+For example, parking lots were marked as roads in some images but not in others.
+Further, there were multiple missing or incomplete roads.
+
+Since the size of the dataset is relatively small, we manually removed the noise and created two versions of the dataset --- one counting parking lot paths as roads and the other one without them.
+Training on the denoised dataset without the parking lot paths most improves our predictions.
+
+\subsection{Post-processing}
+
+    \subsubsection{Physarum Polycephalum}\label{novelties:spp}
+        One attempt is inspired by the Physarum Polycephalum (PP), a singular cell organism that has the surprising ability to make shortest path approximations between food sources \cite{nakagaki2001smart}.
+        We equate the disjoint street patches with the food sources; intuitively, a PP-inspired mechanism could effectively connect these patches into cohesive streets.
+        Our PP algorithm is a post-processing step that is initialized at all edge pixels that are classified as a street.
+        It then moves inward, either with the fixed rule or by using a local CNN classification.
+        
+    \begin{algorithm}
+        \SetAlgoLined
+        \KwResult{pixel-wise classification mask }
+         classification <- pixel-wise classification mask\;
+         queue <- edge pixels classified as street\;
+         output\_classification <- zeros\_like(classification)\;
+         \While{queue not empty}{
+          pix <- queue.get\_random\_element\;
+          \For{ pix2 in pix.get\_adjacent\_pixels}{
+           \If{classification[pix2] > threshold $\lambda$}{
+           output\_classification[pix2] = classification[pix2]\;
+           \If{not\_visited(pix2)}
+           {queue.add(pix2)\;}
+           }
+           }
+         }
+         return output\_classification\;
+        \caption{Simple Physarum Polycephalum (SPP)}
+        \label{alg:spp-code}
+    \end{algorithm}
     
-    \subsubsection{Physarum Polycephalum}
-    One attempt is inspired by the Physarum Polycephalum (PP), a singular cell organism that has the suprising ability to do shortest path approximations between food sources \cite{nakagaki2001smart}. The intuition is that similar to food sources, such a mechanism could effectively connect patches of street into correct streets. The PP algorithm is a post-processing step that is initialized at all the edges of the image that are classified as street. It then moves inward, either with fixed rule, or using a local CNN classification. The training of this CNN proved too unstable with different hyper parameters, and was thus not further explored.
+    The training of this CNN proved too unstable with different hyperparameters and was thus not further explored.
+    The fixed rule method found application in a simpler version, where PP only copies the classification layer.
+    Effectively, it turns into a post-processing step that drops all patches from the classification that are not connected to an edge.
+    This algorithm is dubbed Simple Physarum Polycephalum~(SPP) and is outlined in Algorithm~\ref{alg:spp-code}.
+
+    \subsubsection{Graph Cut}
+    A widely used algorithm for background-foreground segmentation in classic computer vision is Graph Cut \cite{graphcut}. 
+    The method's main idea is to model an image as a graph, with nodes corresponding to pixels, and edges to pixel adjacencies with an intensity-based penalty function.
+    It solves the task of segmentation by computing the minimum cut in the graph.
+    Grab-Cut \cite{grabcut} further leverages the Graph-Cut method by iteratively estimating the minimum cut over Gaussian Mixture Models for labels that are separately trained for foreground and background.
+    
+    We observed that applying hard thresholding on output probabilities might result in bubbly masks in which some parts of the roads are missed. Thus, we tried using Grab-Cut as a more flexible binarization method. This causes roads to be better connected in the output masks. However, since Grab-Cut only uses the weak signal of downstream probabilities, it is not able to detect erroneous patches, thus possibly amplify errors.
+    
+    We also used Grab-Cut as an ensembling method. We formed N-d images out of grayscale probability masks put out from different models and use Grab-Cut to generate an ensembled binary mask for each data point. This way, we managed to achieve smooth ensembled masks containing all the partially recognized roads of each model. However, the wrongly classified roads also propagate to the ensembled mask, leading to a minor drop in accuracy.
+    
+    Having all the partially recognized road segments aggregated into connected roads by Grab-Cut ensembler, we found that the SPP algorithm can be a promising tool for noise removal. We applied the SPP algorithm on Grab-Cut ensembler outputs and got some wrongly classified areas removed from the masks. 
+
+\subsection{Scrapped Novelties}\label{novelties:scrapped}
+    This section gives an overview of the novelties that were tried but didn't improve the baseline.
    
     \subsubsection{Graph Neural Network}
-    Using a U-Net jointly trained with a Graph Neural Network (GNN) has proven effective for classifying arteries in the eye \cite{shin2019deep}. The classifications in the retinal artery tasks are already less patchy than the ones of our baseline, thus the method can not easily be applied on this task. The main issue is that one has to create a graph from the classification to train and apply a GNN on, but our baseline classification does not provide the necessary outputs.
+    Using a U-Net jointly trained with a Graph Neural Network (GNN) has proven effective for classifying arteries in the eye \cite{shin2019deep}.
+    The classifications in the retinal artery tasks are already less patchy than the ones of our baseline. Thus, the method can not easily applied to this task.
+    The main issue is that one has to create a graph from the classifications to train and apply a GNN on, but our baseline classifications do not provide the necessary outputs.
     
     \subsubsection{Conditional Random Fields}
-    One of our ideas for reducing the impact of color in classification and including the shapes in the decision was Conditional Random Fields (CRF). CRF modeling is a method that takes the neighboring area for each pixel into account when classifying it. CRF was previously used as a post-processing step in most cases, but this can decrease the overall speed of the classification because of CRF's slow training and inference speed. Instead, we used CRF as a layer in the convolutional network, which is known as ConvCRF \cite{convcrf}.
+    One of our ideas for including the shapes and spatial connectivity of roads in the classification was using Conditional Random Fields (CRF) \cite{crf1, crf2}.
+    CRFs are a class of discriminative undirected probabilistic graphical models that take the neighboring area for each pixel into account when classifying it.
+    Conventionally, CRFs are used as a post-processing step, but this can be improved by incorporating it into the main model itself.
+    We attempted using ConvCRF~\cite{convcrf}, which implements CRFs as a single locally connected layer, as the final layer in our convolutional network, but this did not improve accuracy.
     
     \subsubsection{CNN Ensembler}
-    Given the multiple different outputs that were produce by the different models and novelties, a reasonable thing is to attempt ensembling \cite{hansen1990neural}. We diverge from the basic ensembling paradigm by not jointly training models or taking the majority vote, but rather train a CNN on top of the different classifications and the input image. In multiple runs with different classifications, the model never managed to outperform the strongest model. It seems, that for a proper use of this method, one needs to jointly train the CNN ensembler with the models for best perfomance. No experiments in this direction were undertaken.
+    Given the multiple different outputs that were produced by the different models and novelties, a reasonable thing is to attempt ensembling \cite{hansen1990neural}.
+    We diverged from the basic ensembling paradigm by not jointly training models or taking the majority vote, but rather trained a CNN on top of the different classifications and the input image.
+    In multiple runs with different classifications, the model never managed to outperform the strongest model.
+    It seems that for proper use of this method, one needs to jointly train the CNN ensembler with the models for best performance.
+    No experiments in this direction were undertaken.
 
+    \subsubsection{Generative Adversarial Networks}
+    The outputs of the baseline model are often not as smooth and continuous as the ground truth.
+    Therefore, we used a Generative Adversarial Network~\cite{gan} (GAN) as a ``learned'' loss to enforce smoothness on a pixel level.
+
+    Here, the baseline model is treated as the generator.
+    We add a patch discriminator~\cite{pix2pix} that has the same architecture as the left half of the baseline model.
+    The outputs of the layer at the lowest depth give us the discriminator's predictions per patch (here, each patch is of size $32 \times 32$).
+    A global average pooling layer then converts all the predictions into a single prediction for the image.
     
-    \subsubsection{Graph Cuts}
-    One of the widely used algorithms for the background-foreground segmentation in classic computer vision is Graph-Cut \cite{graphcut}. 
-The method's main idea is to model an image as a graph (with corresponding nodes for each pixel and edges for adjacent pixels with an intensity-based penalty function) and solve the task of segmentation by computing the minimum cut in the graph.
-GrabCut \cite{grabcut} further leverages the Graph-Cut method by iteratively estimating the minimum cut over GMM labels separately trained for foreground and background.
-
-We have observed that applying hard thresholding on output probabilities might cause some parts of the roads to be missed that results in bubbly masks. Thus, we tried using GrabCut as post-processing instead. This resulted in more coherent and complete roads in the output mask. However, since GrabCut has only access to downstream probabilities as the signal, it also amplifies the error on areas like parking lots that are wrongly classified as a road.
-
-We also used GrabCut as an ensembling method. We treated grayscale probability masks outputted from different models as channels of an N-d image and fed GrabCut to generate the final binary mask. This way, we managed to get smooth ensembled masks containing all the partially recognized roads of each model. Though, the wrongly classified roads still propagate to the ensembled mask, leading to a minor drop in the accuracy.
-
-Having all the partially recognized road segments aggregated into connected roads by GrabCut ensembler, we found Slime a promising tool for noise removal. We applied Slime on GrabCut ensmebler outputs and got wrongly classified parking lots removed. Although it increased our public score, the score could not exceed our best individual model's score.
-
-    \subsubsection{GAN}
-    \input{sections/novelties/gan}
+    We used the Wasserstein~\cite{wgan} loss to train the GAN.
+    Additionally, we added spectral normalization~\cite{spectral-norm} to the weights of the discriminator to enforce the Lipschitz continuity constraint for the Wasserstein loss. Again, no improvements were noticeable, while leading to longer training times.

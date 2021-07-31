@@ -1,0 +1,29 @@
+At each U-Net depth, we use a block of two 2D convolution layers with residual connections between the inputs and the block outputs.
+Each 2D convolution layer is preceded by dropout~\cite{dropout} and succeeded by batch normalization~\cite{batch-norm} followed by a leaky ReLU activation function.
+If the number of channels changes, then the skip connection has a $1 \times 1$ 2D convolution layer to transform the channels in the inputs.
+Otherwise, the skip connection is an identity function.
+
+Initially, the three RGB channels are transformed into $c_1$ channels.
+At every depth, the number of channels increases by a factor of 2, until it reaches a fixed upper cap ($c_\mathrm{max}$).%chktex 35
+
+Refer to Table~\ref{tab:unet-hyper-params} for further architecture-specific hyper-parameters.
+
+\begin{table}[h]
+    \centering
+    \caption{U-Net architecture hyper-parameters}%
+    \label{tab:unet-hyper-params}
+    \begin{tabular}{l r}
+        \toprule
+        Hyper-parameter & Value \\
+        \midrule
+        U-Net depth & 6 \\
+        Dropout & 0.1 \\
+        Initial channels ($c_1$) & 64 \\
+        Maximum channels ($c_\mathrm{max}$) & 1024 \\%chktex 35
+        2D convolution kernel size & $3 \times 3$ \\
+        2D convolution padding & SAME \\
+        Leaky ReLU slope & 0.2 \\
+        Max pooling kernel size & $2 \times 2$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}

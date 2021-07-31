@@ -1,1 +1,7 @@
-INTRODUCTION
+The saying goes: "All roads lead to Rome." Were that the case, then the task of road segmentation would be pretty easy. But alas, it is not. Road segmentation concerns itself with automatically detecting roads and non-roads in bird's-eye view images, thus falling into the field of semantic segmentation in computer vision. Exemplary applications are the automatic generation of maps for navigation systems, which otherwise would have to be annotated by hand.
+
+Previous models~\cite{bastani2018roadtracer, mattyus2017deeproadmapper, kaiser2017learning} are both very data-hungry and biased for straight road segments. The dataset in this work consists of 100 training images of $400 \times 400$ pixels and 96 test images with $608 \times 608$ pixels. This dataset is relatively small and also very noisy. To tackle the noise issue, we manually cleaned the data.
+
+Our approach to the task combines a U-Net~\cite{unet} with Contrastive Learning~\cite{chopra2005learning} and a sequence of data augmentations~\cite{lecun1998gradient}.
+In the post-processing step, we then apply Graph Cut ~\cite{graphcut} and a novel algorithm called Simple Physarum Polycephalum (Section~\ref{novelties:spp})\footnote{A documented implementation can be found on: \href{https://github.com/rharish101/CIL-Project}{https://github.com/rharish101/CIL-Project}}.
+Section~\ref{novelties:scrapped} discusses multiple novelties that we attempted but decided to scrap due to no significant improvements over the baseline.

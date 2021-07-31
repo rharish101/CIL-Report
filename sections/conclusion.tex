@@ -1,0 +1,11 @@
+Our solution includes different novelties at all steps of the machine learning pipeline.
+First, the data is cleaned, then we apply a fine-tuned set of augmentations.
+The training of our baseline is enriched with contrastive learning, and the outputs go through a post-processing pipeline consisting of Graph Cuts and SPP.
+
+Two of our main novelties are SPP and contrastive learning for shape bias.
+SPP makes clever use of the inductive biases of the road segmentation task.
+On the other hand, the contrastive learning approach for inducing shape bias is a general approach that can be applied to any CNN-based model to reduce texture bias.
+
+Our approach highlights the strength of both neural and non-neural approaches.
+An avenue for future improvements is more fluently linking the different steps into a jointly learned pipeline to enable signal propagation between the final output metrics and the parameters of our core CNN.
+Another avenue is to investigate how the proposed novelties can be applied to tasks other than road segmentation.

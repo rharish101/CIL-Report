@@ -1,0 +1,27 @@
+All the hyperparameters that are used in experiments are listed in Table \ref{tab:hyperparameters}. 
+We use the same set of hyperparameters for all experiments.
+
+\begin{table}[H]
+    \centering
+    \caption{The list of hyperparameters used for experiments.}%
+    \label{tab:hyperparameters}
+    \begin{tabular}{l l}
+        \toprule
+        Hyper-parameter & Value \\
+        \midrule
+        Minimum learning rate & $5 \times 10^{-5}$ \\
+        Maximum learning rate & $10^{-4}$ \\
+        Weight decay & $10^{-5}$ \\
+        Number of epochs & $8000$ \\
+        Random seeds\textsuperscript{*} & $0$ \\
+        Train batch size & $24$ \\
+        Binarization threshold & $0.5$ \\ 
+        Shape loss coefficient ($\alpha_{shape}$) & $10^{-2}$ \\
+        Shape loss softmax temperature ($\tau$) & $1$ \\
+        GrabCut probable foreground threshold\textsuperscript{$\star$} & 0.1255 \\
+        SPP change threshold\textsuperscript{$\star$} ($\lambda$) & 0.1 \\
+        \bottomrule
+        \multicolumn{2}{l}{\small * Specific to our codebase.} \\
+        \multicolumn{2}{l}{\small $\star$ Thresholds are on image intensity in $[0, 1]$.}
+    \end{tabular}
+\end{table}
