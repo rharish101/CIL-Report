@@ -88,7 +88,13 @@ sorting=none
 }
 \begin{document}
 
+\makeatletter
+\let\save@parmoderr\@parmoderr
+\def\@parmoderr{}
+\@twocolumnfalse
 \twocolumn[\maketitle]
+\let\@parmoderr\save@parmoderr
+\makeatother
 
 \section{Introduction} \label{intro}
 \input{sections/introduction}
